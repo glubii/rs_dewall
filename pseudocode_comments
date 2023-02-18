@@ -1,0 +1,119 @@
+/*
+ * Fast divide and conquer Delaunay triangulation algorithm in E^d
+ * Cignoni et al. 1998
+ */
+
+fn dewall ( (P: pointset , AFL: (d-1)_face_list): d_simplex_list )
+
+  // Only used locally, here just for the type info
+  f: (d-1) face
+  t: d-simplex
+
+  // (d-1) faces intersected by plane alpha
+  AFL_alpha: d_face_list
+
+  // (d-1) faces with all of the vertices in P1
+  AFL1: d_face_list
+
+  // (d-1) faces with all of the vertices in P2
+  AFL2: d_face_list
+
+  sigma: d_simplex_list
+
+  //Used to split P, must be chosen so it results in two disjoint Pointsets P1, P2
+  //Cyclically selected as orthogonal to the axes of the previous alpha plane (p.337)
+  alpha: splitting_plane
+
+  begin
+    AFL_alpha, AFL_1, AFL_2 = empty_face_list
+
+    //
+    Pointset_Partition (P, alpha, P1, P2)
+  
+    //Simplex Wall Construction
+    if AFL.empty
+      t = MakeFirstSimplex(P, P1, P2, alpha)
+      AFL = (d-1)faces (t)
+      Insert(t, sigma)
+    
+    for f in AFL
+      if IsIntersected(f, alpha)
+        Insert(f, AFL_alpha)
+      if Vertices(f) in P1
+        Insert(f, AFL_1)
+      if Vertices(f) in P2
+        Insert(f, AFL_2)
+
+     while not AFL.empty()
+       f = Extract(AFL_sigma)
+       t = MakeSimplex(f,P)
+       
+       if t != null
+          sigma += t
+          
+          for f' in (d-1)faces(t) and f != f'
+      	    if IsIntersected(f', alpha)
+              Update(f', AFL_alpha)
+            if Vertices(f') in P1
+              Update(f', AFL_1)
+            if Vertices(f') in P2
+              Update(f', AFL_2)
+
+     if not AFL_1.empty()
+       sigma+=DeWall(P1, AFL_1)
+     if not AFL_2.empty()
+       sigma+=DeWall(P1, AFL_2)
+    
+     DeWall = sigma
+     return DeWall //? 
+  end
+
+fn Update (f: face, L: face_list)
+  if Member(f, L)
+    Delete(f, L)
+  else
+    Insert(f, L)
+
+//p.335
+fn MakeFirstSimplex(P, P1, P2, alpha) ->
+  p1 = p in P where min distance(p, alpha)
+
+  p2_search_pointset: point_set
+  if p1 in P1
+    p2_search_pointset = *P2
+  if p1 in P2
+    p2_search_pointset = *P1
+ 
+  p2 = p in p2_search_pointset where min distance(p, p2)
+
+  //Finds t3 and returns the Simplex
+  t = MakeSimplex(f, P)
+
+  return t
+  
+
+//MakeSimplex selects the point p which minimizes the delauny distance dd
+fn MakeSimplex(f: face, P: pointset) -> t: tetrahedra
+  p = min dd(f, P.contents)
+  t = Halfspace (f,p) //returns null if no points in the Halfspace
+  return t
+
+fn dd(f: face, p: point)
+  cs = circumsphere(f, p)
+  r = cs.radius
+  c = cs.center
+
+  if c in Halfspace (f, p)
+    return r
+  else
+    return -r
+
+fn circumsphere()
+fn Halfspace()
+
+fn PointSet_Partition
+
+//TODO
+uniform grid (p.338)
+alternatively quad/octrees or kd-trees ?
+
