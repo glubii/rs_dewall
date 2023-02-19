@@ -1,5 +1,5 @@
 
-#[derive(Clone, Copy, PartialEq, Eq, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Ord, Debug)]
 pub struct Point {
     pub x: u32,
     pub y: u32
@@ -39,7 +39,7 @@ impl Point {
         ( (edge.end.x as f32 - edge.start.x as f32)
         *(self.y  as f32- edge.start.y as f32)
         - (edge.end.y as f32 - edge.start.y as f32)
-        *(self.x as f32 - edge.start.x as f32) ) > 0.0
+        *(self.x as f32 - edge.start.x as f32) ) >= 0.0
     }
 
     /*
@@ -112,7 +112,7 @@ impl PartialOrd for Point {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Edge {
     pub start: Point,
     pub end: Point
@@ -120,6 +120,9 @@ pub struct Edge {
 
 impl Edge {
     pub fn new (start: Point, end: Point) -> Self {
+        if start == end {
+            panic!("Start- and endpoint of an edge may not be the same");
+        }
         Edge{start, end}
     }
 
@@ -139,12 +142,27 @@ impl PartialEq for Edge {
 pub struct Triangle{
     pub p1: Point,
     pub p2: Point,
-    pub p3: Point
+    pub p3: Point,
+
+    pub e1: Edge,
+    pub e2: Edge,
+    pub e3: Edge
 }
 
 impl Triangle {
     pub fn new (p1: Point, p2: Point, p3: Point) -> Self {
-        Triangle{p1, p2, p3}
+        if p1 == p2 || p2 == p3 || p3 == p1 {
+            panic!("Edges of a triangle may not be the same points");
+        }
+        let e1 = Edge::new(p2, p3);
+        let e2 = Edge::new(p3, p1);
+        let e3 = Edge::new(p1, p2);
+
+        assert!(p1.left_side_of_edge(&e1));
+        assert!(p2.left_side_of_edge(&e2));
+        assert!(p3.left_side_of_edge(&e3));
+
+        Triangle{p1, p2, p3, e1, e2, e3}
     }
     pub fn point_inside(&self, point: Point) -> bool {
         let e1 = Edge::new(self.p1, self.p2);
@@ -152,5 +170,243 @@ impl Triangle {
         let e3 = Edge::new(self.p3, self.p1);
         return point.left_side_of_edge(&e1) && point.left_side_of_edge(&e2) && point.left_side_of_edge(&e3);
     }
+
 }
 
+pub struct SpacePartition{
+    pub span_x: Edge,
+    pub span_y: Edge,
+    pub alpha: Edge,
+}
+
+impl SpacePartition{
+    pub fn new(span_x: Edge, span_y: Edge, alpha: Edge) -> Self {
+        SpacePartition { span_x, span_y, alpha }
+    }
+
+    pub fn partition(&self) -> (SpacePartition, SpacePartition) {
+        let alpha1: Edge;
+        let alpha2: Edge;
+        let span_x_1: Edge;
+        let span_x_2: Edge;
+        let span_y_1: Edge;
+        let span_y_2: Edge;
+
+        println!("span_x from {} {} to {} {}", self.span_x.start.x, self.span_x.start.y, self.span_x.end.x, self.span_x.end.y);
+        println!("span_y from {} {} to {} {}", self.span_y.start.x, self.span_y.start.y, self.span_y.end.x, self.span_y.end.y);
+        println!("alpha from {} {} to {} {}", self.alpha.start.x, self.alpha.start.y, self.alpha.end.x, self.alpha.end.y);
+
+        if self.alpha.start.x == self.alpha.end.x {
+            let new_y = self.alpha.start.y + (self.alpha.end.y - self.alpha.start.y)/2;
+            alpha1 = Edge::new(
+                Point::new(self.span_x.start.x, new_y),
+                Point::new(self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x)/2, new_y)
+            );
+            alpha2 = Edge::new(
+                alpha1.end,
+                Point::new(self.span_x.end.x, new_y)
+            );
+            span_x_1 = Edge::new(
+                self.span_x.start,
+                Point::new(
+                    self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x)/2,
+                    self.span_x.start.y
+                )
+            );
+            span_x_2 = Edge::new(
+                span_x_1.end,
+                self.span_x.end,
+            );
+
+            span_y_1 = self.span_y;
+            span_y_2 = self.span_y;
+        }
+        else {
+            let new_x = self.alpha.start.x + (self.alpha.end.x - self.alpha.start.x)/2;
+            alpha1 = Edge::new(
+                Point::new(new_x, self.span_y.start.y),
+                Point::new(new_x, self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y)/2)
+            );
+            alpha2 = Edge::new(
+                alpha1.end,
+                Point::new(new_x, self.span_y.end.y)
+            );
+
+            span_y_1 = Edge::new(
+                self.span_y.start,
+                Point::new(
+                    self.span_y.start.x,
+                    self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y)/2,
+                )
+            );
+            span_y_2 = Edge::new(
+                span_y_1.end, 
+                self.span_y.end,
+            );
+
+            span_x_1 = self.span_x;
+            span_x_2 = self.span_x;
+        }
+        println!("alpha1 from {} {} to {} {}", alpha1.start.x, alpha1.start.y, alpha1.end.x, alpha1.end.y);
+        println!("alpha2 from {} {} to {} {}", alpha2.start.x, alpha2.start.y, alpha2.end.x, alpha2.end.y);
+
+        return (
+            SpacePartition::new(span_x_1, span_y_1, alpha1),
+            SpacePartition::new(span_x_2, span_y_2, alpha2),
+        );
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Point;
+    use crate::Edge;
+    use crate::SpacePartition;
+
+    fn setup(){
+    //Four points with the center in at 2/2
+    let p1 = Point::new (1, 1);
+    let p2 = Point::new (3, 1);
+    let p3 = Point::new (2, 2);
+    let p4 = Point::new (0, 2);
+
+    let edge = Edge::new(p1, p2);
+    let edge2 = Edge::new(p2, p1);
+    }
+
+
+    #[test]
+    fn test_length(){
+        let p1 = Point::new (1, 1);
+        let p2 = Point::new (3, 1);
+
+        assert_eq!(p1.length(&p2), 2.0);
+    }
+
+    #[test]
+    fn test_distance_to_edge(){
+        let p1 = Point::new (1, 1);
+        let p2 = Point::new (3, 1);
+        let p3 = Point::new (2, 2);
+
+        let edge = Edge::new(p1, p2);
+        let inv_edge = Edge::new(p2, p1);
+
+        assert_eq!(p3.distance_to_edge(&edge), -1.0);
+        assert_eq!(p3.distance_to_edge(&inv_edge), 1.0);
+    }
+
+    #[test]
+    fn test_left_side_of_edge(){
+        let p1 = Point::new (1, 1);
+        let p2 = Point::new (3, 1);
+        let p3 = Point::new (2, 2);
+
+        let edge = Edge::new(p1, p2);
+        let inv_edge = Edge::new(p2, p1);
+
+        assert_eq!(p3.left_side_of_edge(&edge), true);
+        assert_eq!(p3.left_side_of_edge(&inv_edge), false);
+    }
+
+    #[test]
+    fn test_circumcircle(){
+        let p1 = Point::new (1, 1);
+        let p2 = Point::new (3, 1);
+        let p3 = Point::new (2, 2);
+        let center = Point::new (2, 1);
+        let (c, r) = p1.circumcircle(&p2, &p3);
+
+        assert_eq!(r, 1.0);
+        assert_eq!(c, center);
+    }
+
+    #[test]
+    fn test_space_partition_x(){
+        let p1 = Point::new (100, 100);
+        let p2 = Point::new (300, 100);
+        let p3 = Point::new (100, 300);
+
+        let span_x = Edge::new (p1, p2);
+        let span_y = Edge::new (p1, p3);
+
+        let alpha = Edge::new (
+            Point::new(200, 100),
+            Point::new(200, 300)
+        );
+
+        let alpha_1 = Edge::new (
+            Point::new(100, 200),
+            Point::new(200, 200)
+        );
+        let alpha_2 = Edge::new (
+            Point::new(200, 200),
+            Point::new(300, 200)
+        );
+
+        let span_x_1 = Edge::new(
+            p1, alpha.start
+        );
+        let span_x_2 = Edge::new(
+            alpha.start, p2
+        );
+
+        let sp = SpacePartition::new(
+            span_x,span_y,alpha
+        );
+        let (sp1, sp2) = sp.partition();
+        assert_eq!(sp1.alpha, alpha_1);
+        assert_eq!(sp2.alpha, alpha_2);
+
+        assert_eq!(sp1.span_x, span_x_1);
+        assert_eq!(sp2.span_x, span_x_2);
+        
+
+        assert_eq!(sp1.span_y, span_y);
+        assert_eq!(sp2.span_y, span_y);
+    }
+
+    #[test]
+    fn test_space_partition_y(){
+        let p1 = Point::new (100, 100);
+        let p2 = Point::new (300, 100);
+        let p3 = Point::new (100, 300);
+
+        let span_x = Edge::new (p1, p2);
+        let span_y = Edge::new (p1, p3);
+
+        let alpha = Edge::new (
+            Point::new(100, 200),
+            Point::new(300, 200)
+        );
+        let alpha_1 = Edge::new (
+            Point::new(200, 100),
+            Point::new(200, 200)
+        );
+        let alpha_2 = Edge::new (
+            Point::new(200, 200),
+            Point::new(200, 300)
+        );
+
+        let span_y_1 = Edge::new(
+            p1, alpha.start
+        );
+        let span_y_2 = Edge::new(
+            alpha.start, p2
+        );
+
+        let sp = SpacePartition::new(
+            span_x,span_y,alpha
+        );
+        let (sp1, sp2) = sp.partition();
+        assert_eq!(sp1.alpha, alpha_1);
+        assert_eq!(sp2.alpha, alpha_2);
+
+        assert_eq!(sp1.span_x, span_x);
+        assert_eq!(sp2.span_x, span_x);
+
+        assert_eq!(sp1.span_y, span_y_1);
+        assert_eq!(sp2.span_y, span_y_2);
+    }
+}
