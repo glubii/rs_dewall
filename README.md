@@ -74,6 +74,5 @@ This function calculates the delaunay distance.
 ## TODO
  - Use k-d-trees or other acceleration structures
  - Threading for the recursion steps
- - Clean outputs
  - Stepwise generation gif
  - Switch to an existing math library

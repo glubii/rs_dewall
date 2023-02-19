@@ -9,19 +9,27 @@ impl Point {
         Point { x, y }
     }
 
-    pub fn length(&self, p2: &Point) -> f32 {
+    /**
+     * @brief Calculates the distance to a second point.
+     */
+    pub fn distance(&self, p2: &Point) -> f32 {
         ((p2.x as f32 - self.x as f32).powf(2.0) + (p2.y as f32 - self.y as f32).powf(2.0)).sqrt()
     }
 
+    /**
+     * @brief Calculates the distance to a second point without the sqrt() fn.
+     * The square root is not needed when simply searching for the shortest distance.
+     */
     pub fn distance_no_sqrt(&self, p2: &Point) -> f32 {
         (p2.x as f32 - self.x as f32).powf(2.0) + (p2.y as f32 - self.y as f32).powf(2.0)
     }
 
     //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
     //SIGNED, use abs for min !
+
     pub fn distance_to_edge(&self, edge: &Edge) -> f32 {
-        let f = ((edge.end.x as f32 - edge.start.x as f32) * (edge.start.y as f32 - self.y as f32)
-            - (edge.start.x as f32 - self.x as f32) * (edge.end.y as f32 - edge.start.y as f32));
+        let f = (edge.end.x as f32 - edge.start.x as f32) * (edge.start.y as f32 - self.y as f32)
+            - (edge.start.x as f32 - self.x as f32) * (edge.end.y as f32 - edge.start.y as f32);
 
         let g = ((edge.end.x as f32 - edge.start.x as f32).powf(2.0)
             + (edge.end.y as f32 - edge.start.y as f32).powf(2.0))
@@ -30,7 +38,12 @@ impl Point {
         return f / g;
     }
 
-    //Checks if the cross prod. / det of the point matrix > 0
+    /**
+     * @brief Checks if the point is on the left side of the edge.
+     * Done by checking if the cross prod. / det of the point matrix > 0
+     *
+     * @returns True if on the left side
+     */
     pub fn left_side_of_edge(&self, edge: &Edge) -> bool {
         ((edge.end.x as f32 - edge.start.x as f32) * (self.y as f32 - edge.start.y as f32)
             - (edge.end.y as f32 - edge.start.y as f32) * (self.x as f32 - edge.start.x as f32))
@@ -38,20 +51,18 @@ impl Point {
     }
 
     /*
-     * Get the equation of a circle when given 3 points
+     * @brief Returns the center and the radius of the circumcircle around the three points
+     *
      * URL (version: 2022-02-22): https://math.stackexchange.com/q/3503338
      * Scott (https://math.stackexchange.com/users/740203/scott)
-     *
-     * Returns the center and the radius of the circumcircle
+     * https://www.geeksforgeeks.org/equation-of-circle-when-three-points-on-the-circle-are-given/
      */
-
     pub fn circumcircle(&self, p2: &Point, p3: &Point) -> (Point, f32) {
         if self == p2 || p2 == p3 || p3 == self {
             //Error, return max radius
-            return (Point::new(0, 0), 999.9);
+            // return (Point::new(0, 0), 99999.9);
+            panic!("The points may not be the same")
         }
-
-        //https://www.geeksforgeeks.org/equation-of-circle-when-three-points-on-the-circle-are-given/
 
         let x12 = self.x as f32 - p2.x as f32;
         let x13 = self.x as f32 - p3.x as f32;
@@ -117,9 +128,6 @@ impl Edge {
         }
         Edge { start, end }
     }
-
-    //TODO
-    //fn len()
 }
 
 //Make the comparison direction invariant
@@ -196,19 +204,6 @@ impl SpacePartition {
         let span_y_1: Edge;
         let span_y_2: Edge;
 
-        println!(
-            "span_x from {} {} to {} {}",
-            self.span_x.start.x, self.span_x.start.y, self.span_x.end.x, self.span_x.end.y
-        );
-        println!(
-            "span_y from {} {} to {} {}",
-            self.span_y.start.x, self.span_y.start.y, self.span_y.end.x, self.span_y.end.y
-        );
-        println!(
-            "alpha from {} {} to {} {}",
-            self.alpha.start.x, self.alpha.start.y, self.alpha.end.x, self.alpha.end.y
-        );
-
         if self.alpha.start.x == self.alpha.end.x {
             let new_y = self.alpha.start.y + (self.alpha.end.y - self.alpha.start.y) / 2;
             alpha2 = Edge::new(
@@ -253,14 +248,6 @@ impl SpacePartition {
             span_x_1 = self.span_x;
             span_x_2 = self.span_x;
         }
-        println!(
-            "alpha1 from {} {} to {} {}",
-            alpha1.start.x, alpha1.start.y, alpha1.end.x, alpha1.end.y
-        );
-        println!(
-            "alpha2 from {} {} to {} {}",
-            alpha2.start.x, alpha2.start.y, alpha2.end.x, alpha2.end.y
-        );
 
         return (
             SpacePartition::new(span_x_1, span_y_1, alpha1),
@@ -291,7 +278,7 @@ mod tests {
         let p1 = Point::new(1, 1);
         let p2 = Point::new(3, 1);
 
-        assert_eq!(p1.length(&p2), 2.0);
+        assert_eq!(p1.distance(&p2), 2.0);
     }
 
     #[test]
