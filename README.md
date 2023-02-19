@@ -1,8 +1,8 @@
 # rs_DeWall
 
-A simple implementation of delauny triangulation based on ["DeWall: A fast divide and conquer Delaunay triangulation algorithm in E^d" from Cignoni et al. (1998)](http://vcg.isti.cnr.it/publications/papers/dewall.pdf)
+A simple implementation of delaunay triangulation based on ["DeWall: A fast divide and conquer Delaunay triangulation algorithm in E^d" from Cignoni et al. (1998)](http://vcg.isti.cnr.it/publications/papers/dewall.pdf)
 
-![](out.png)
+![](doc/out.png)
 
 ## Usage
 Build with `cargo --release`, otherwise the programm will take minutes instead of seconds.
@@ -65,6 +65,11 @@ fn Update (f: face, L: face_list)
   else
     Insert(f, L)
 ```
+
+### dd()
+This function calculates the delaunay distance.
+
+![](doc/dd.png)
 
 ## TODO
  - Use k-d-trees or other acceleration structures

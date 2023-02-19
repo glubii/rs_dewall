@@ -4,10 +4,8 @@ mod geometry;
 use geometry::Edge;
 use geometry::Point;
 use geometry::SpacePartition;
-use geometry::Triangle;
 
 mod algorithm;
-use algorithm::dd;
 use algorithm::de_wall;
 
 fn main() {
@@ -16,7 +14,7 @@ fn main() {
 
     let mut imgbuf = image::RgbImage::new(imgx, imgy);
 
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+    for (_x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
         *pixel = image::Rgb([255, 255, 255]);
     }
 
@@ -49,7 +47,7 @@ fn main() {
     points_list.sort();
     points_list.dedup();
 
-    //Delauny
+    // Apply the Delaunay algorithm
     let mut afl: Vec<Edge> = Vec::new();
 
     let sp = SpacePartition::new(
