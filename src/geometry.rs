@@ -252,11 +252,11 @@ mod tests {
     use crate::SpacePartition;
 
     #[test]
-    fn test_length() {
+    fn test_distance_squared() {
         let p1 = Point::new(1.0, 1.0);
         let p2 = Point::new(3.0, 1.0);
 
-        assert_eq!(p1.distance(&p2), 2.0);
+        assert_eq!(p1.distance_squared(&p2), 4.0);
     }
 
     #[test]
