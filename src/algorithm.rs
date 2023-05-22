@@ -1,4 +1,3 @@
-// mod geometry;
 use crate::geometry::Edge;
 use crate::geometry::Point;
 use crate::geometry::SpacePartition;
@@ -140,7 +139,7 @@ fn make_first_simplex(P: &Vec<Point>, alpha: &Edge, P1: &Vec<Point>, P2: &Vec<Po
     }
 
     let corner_2 = match P_for_c2.iter().reduce(|p1: &Point, p2: &Point| {
-        if p1.distance_no_sqrt(corner_1) < p2.distance_no_sqrt(corner_1) {
+        if p1.distance_squared(corner_1) < p2.distance_squared(corner_1) {
             p1
         } else {
             p2

@@ -1,39 +1,28 @@
-#[derive(Clone, Copy, PartialEq, Eq, Ord, Debug)]
-pub struct Point {
-    pub x: u32,
-    pub y: u32,
-}
+use nalgebra::distance_squared;
+use nalgebra::Point2;
+use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Point(Point2<f32>);
 
 impl Point {
-    pub fn new(x: u32, y: u32) -> Self {
-        Point { x, y }
+    pub fn new(x: f32, y: f32) -> Self {
+        Point(Point2::new(x, y))
     }
 
-    /**
-     * @brief Calculates the distance to a second point.
-     */
-    pub fn distance(&self, p2: &Point) -> f32 {
-        ((p2.x as f32 - self.x as f32).powf(2.0) + (p2.y as f32 - self.y as f32).powf(2.0)).sqrt()
-    }
-
-    /**
-     * @brief Calculates the distance to a second point without the sqrt() fn.
-     * The square root is not needed when simply searching for the shortest distance.
-     */
-    pub fn distance_no_sqrt(&self, p2: &Point) -> f32 {
-        (p2.x as f32 - self.x as f32).powf(2.0) + (p2.y as f32 - self.y as f32).powf(2.0)
+    pub fn distance_squared(&self, other: &Point) -> f32 {
+        distance_squared(&self.0, &other.0)
     }
 
     //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
     //SIGNED, use abs for min !
-
     pub fn distance_to_edge(&self, edge: &Edge) -> f32 {
-        let f = (edge.end.x as f32 - edge.start.x as f32) * (edge.start.y as f32 - self.y as f32)
-            - (edge.start.x as f32 - self.x as f32) * (edge.end.y as f32 - edge.start.y as f32);
+        let f = (edge.end.x - edge.start.x) * (edge.start.y - self.y)
+            - (edge.start.x - self.x) * (edge.end.y - edge.start.y);
 
-        let g = ((edge.end.x as f32 - edge.start.x as f32).powf(2.0)
-            + (edge.end.y as f32 - edge.start.y as f32).powf(2.0))
-        .sqrt();
+        let g =
+            ((edge.end.x - edge.start.x).powf(2.0) + (edge.end.y - edge.start.y).powf(2.0)).sqrt();
 
         return f / g;
     }
@@ -45,8 +34,8 @@ impl Point {
      * @returns True if on the left side
      */
     pub fn left_side_of_edge(&self, edge: &Edge) -> bool {
-        ((edge.end.x as f32 - edge.start.x as f32) * (self.y as f32 - edge.start.y as f32)
-            - (edge.end.y as f32 - edge.start.y as f32) * (self.x as f32 - edge.start.x as f32))
+        ((edge.end.x - edge.start.x) * (self.y - edge.start.y)
+            - (edge.end.y - edge.start.y) * (self.x - edge.start.x))
             >= 0.0
     }
 
@@ -59,38 +48,33 @@ impl Point {
      */
     pub fn circumcircle(&self, p2: &Point, p3: &Point) -> (Point, f32) {
         if self == p2 || p2 == p3 || p3 == self {
-            //Error, return max radius
-            // return (Point::new(0, 0), 99999.9);
             panic!("The points may not be the same")
         }
 
-        let x12 = self.x as f32 - p2.x as f32;
-        let x13 = self.x as f32 - p3.x as f32;
+        let x12 = self.x - p2.x;
+        let x13 = self.x - p3.x;
 
-        let y12 = self.y as f32 - p2.y as f32;
-        let y13 = self.y as f32 - p3.y as f32;
+        let y12 = self.y - p2.y;
+        let y13 = self.y - p3.y;
 
-        let x31 = p3.x as f32 - self.x as f32;
-        let x21 = p2.x as f32 - self.x as f32;
+        let x31 = p3.x - self.x;
+        let x21 = p2.x - self.x;
 
-        let y31 = p3.y as f32 - self.y as f32;
-        let y21 = p2.y as f32 - self.y as f32;
+        let y31 = p3.y - self.y;
+        let y21 = p2.y - self.y;
 
         // x1^2 - x3^2
-        let sx13 = self.x.pow(2) as f32 - p3.x.pow(2) as f32;
-        let sy13 = self.y.pow(2) as f32 - p3.y.pow(2) as f32;
-        let sx21 = p2.x.pow(2) as f32 - self.x.pow(2) as f32;
-        let sy21 = p2.y.pow(2) as f32 - self.y.pow(2) as f32;
+        let sx13 = self.x.powf(2.0) - p3.x.powf(2.0);
+        let sy13 = self.y.powf(2.0) - p3.y.powf(2.0);
+        let sx21 = p2.x.powf(2.0) - self.x.powf(2.0);
+        let sy21 = p2.y.powf(2.0) - self.y.powf(2.0);
 
         let f = ((sx13) * (x12) + (sy13) * (x12) + (sx21) * (x13) + (sy21) * (x13))
             / (2.0 * ((y31) * (x12) - (y21) * (x13)));
         let g = ((sx13) * (y12) + (sy13) * (y12) + (sx21) * (y13) + (sy21) * (y13))
             / (2.0 * ((x31) * (y12) - (x21) * (y13)));
 
-        let c = -(self.x.pow(2) as f32)
-            - (self.y.pow(2) as f32)
-            - 2.0 * g * (self.x as f32)
-            - 2.0 * f * (self.y as f32);
+        let c = -(self.x.powf(2.0)) - (self.y.powf(2.0)) - 2.0 * g * (self.x) - 2.0 * f * (self.y);
 
         // eqn of circle be x^2 + y^2 + 2*g*x + 2*f*y + c = 0
         // where centre is (h = -g, k = -f) and radius r
@@ -102,16 +86,21 @@ impl Point {
         // r is the radius
         let r = sqr_of_r.sqrt();
 
-        return (Point::new(h as u32, k as u32), r);
+        return (Point::new(h, k), r);
     }
 }
 
-impl PartialOrd for Point {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.x == other.x {
-            return Some(self.y.cmp(&other.y));
-        }
-        Some(self.x.cmp(&other.x))
+impl Deref for Point {
+    type Target = Point2<f32>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Point {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -205,11 +194,11 @@ impl SpacePartition {
         let span_y_2: Edge;
 
         if self.alpha.start.x == self.alpha.end.x {
-            let new_y = self.alpha.start.y + (self.alpha.end.y - self.alpha.start.y) / 2;
+            let new_y = self.alpha.start.y + (self.alpha.end.y - self.alpha.start.y) / 2.0;
             alpha2 = Edge::new(
                 Point::new(self.span_x.start.x, new_y),
                 Point::new(
-                    self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x) / 2,
+                    self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x) / 2.0,
                     new_y,
                 ),
             );
@@ -217,7 +206,7 @@ impl SpacePartition {
             span_x_2 = Edge::new(
                 self.span_x.start,
                 Point::new(
-                    self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x) / 2,
+                    self.span_x.start.x + (self.span_x.end.x - self.span_x.start.x) / 2.0,
                     self.span_x.start.y,
                 ),
             );
@@ -226,12 +215,12 @@ impl SpacePartition {
             span_y_1 = self.span_y;
             span_y_2 = self.span_y;
         } else {
-            let new_x = self.alpha.start.x + (self.alpha.end.x - self.alpha.start.x) / 2;
+            let new_x = self.alpha.start.x + (self.alpha.end.x - self.alpha.start.x) / 2.0;
             alpha1 = Edge::new(
                 Point::new(new_x, self.span_y.start.y),
                 Point::new(
                     new_x,
-                    self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y) / 2,
+                    self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y) / 2.0,
                 ),
             );
             alpha2 = Edge::new(alpha1.end, Point::new(new_x, self.span_y.end.y));
@@ -240,7 +229,7 @@ impl SpacePartition {
                 self.span_y.start,
                 Point::new(
                     self.span_y.start.x,
-                    self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y) / 2,
+                    self.span_y.start.y + (self.span_y.end.y - self.span_y.start.y) / 2.0,
                 ),
             );
             span_y_2 = Edge::new(span_y_1.end, self.span_y.end);
@@ -262,30 +251,19 @@ mod tests {
     use crate::Point;
     use crate::SpacePartition;
 
-    fn setup() {
-        //Four points with the center in at 2/2
-        let p1 = Point::new(1, 1);
-        let p2 = Point::new(3, 1);
-        let p3 = Point::new(2, 2);
-        let p4 = Point::new(0, 2);
-
-        let edge = Edge::new(p1, p2);
-        let edge2 = Edge::new(p2, p1);
-    }
-
     #[test]
     fn test_length() {
-        let p1 = Point::new(1, 1);
-        let p2 = Point::new(3, 1);
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(3.0, 1.0);
 
         assert_eq!(p1.distance(&p2), 2.0);
     }
 
     #[test]
     fn test_distance_to_edge() {
-        let p1 = Point::new(1, 1);
-        let p2 = Point::new(3, 1);
-        let p3 = Point::new(2, 2);
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(3.0, 1.0);
+        let p3 = Point::new(2.0, 2.0);
 
         let edge = Edge::new(p1, p2);
         let inv_edge = Edge::new(p2, p1);
@@ -296,9 +274,9 @@ mod tests {
 
     #[test]
     fn test_left_side_of_edge() {
-        let p1 = Point::new(1, 1);
-        let p2 = Point::new(3, 1);
-        let p3 = Point::new(2, 2);
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(3.0, 1.0);
+        let p3 = Point::new(2.0, 2.0);
 
         let edge = Edge::new(p1, p2);
         let inv_edge = Edge::new(p2, p1);
@@ -309,10 +287,10 @@ mod tests {
 
     #[test]
     fn test_circumcircle() {
-        let p1 = Point::new(1, 1);
-        let p2 = Point::new(3, 1);
-        let p3 = Point::new(2, 2);
-        let center = Point::new(2, 1);
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(3.0, 1.0);
+        let p3 = Point::new(2.0, 2.0);
+        let center = Point::new(2.0, 1.0);
         let (c, r) = p1.circumcircle(&p2, &p3);
 
         assert_eq!(r, 1.0);
@@ -321,17 +299,17 @@ mod tests {
 
     #[test]
     fn test_space_partition_x() {
-        let p1 = Point::new(300, 100);
-        let p2 = Point::new(700, 100);
-        let p3 = Point::new(300, 300);
+        let p1 = Point::new(300.0, 100.0);
+        let p2 = Point::new(700.0, 100.0);
+        let p3 = Point::new(300.0, 300.0);
 
         let span_x = Edge::new(p1, p2);
         let span_y = Edge::new(p1, p3);
 
-        let alpha = Edge::new(Point::new(500, 100), Point::new(500, 300));
+        let alpha = Edge::new(Point::new(500.0, 100.0), Point::new(500.0, 300.0));
 
-        let alpha_2 = Edge::new(Point::new(300, 200), Point::new(500, 200));
-        let alpha_1 = Edge::new(Point::new(500, 200), Point::new(700, 200));
+        let alpha_2 = Edge::new(Point::new(300.0, 200.0), Point::new(500.0, 200.0));
+        let alpha_1 = Edge::new(Point::new(500.0, 200.0), Point::new(700.0, 200.0));
 
         let span_x_2 = Edge::new(p1, alpha.start);
         let span_x_1 = Edge::new(alpha.start, p2);
@@ -350,16 +328,16 @@ mod tests {
 
     #[test]
     fn test_space_partition_y() {
-        let p1 = Point::new(100, 300);
-        let p2 = Point::new(100, 700);
-        let p3 = Point::new(300, 300);
+        let p1 = Point::new(100.0, 300.0);
+        let p2 = Point::new(100.0, 700.0);
+        let p3 = Point::new(300.0, 300.0);
 
         let span_y = Edge::new(p1, p2);
         let span_x = Edge::new(p1, p3);
 
-        let alpha = Edge::new(Point::new(100, 500), Point::new(300, 500));
-        let alpha_1 = Edge::new(Point::new(200, 300), Point::new(200, 500));
-        let alpha_2 = Edge::new(Point::new(200, 500), Point::new(200, 700));
+        let alpha = Edge::new(Point::new(100.0, 500.0), Point::new(300.0, 500.0));
+        let alpha_1 = Edge::new(Point::new(200.0, 300.0), Point::new(200.0, 500.0));
+        let alpha_2 = Edge::new(Point::new(200.0, 500.0), Point::new(200.0, 700.0));
 
         let span_y_1 = Edge::new(p1, alpha.start);
         let span_y_2 = Edge::new(alpha.start, p2);

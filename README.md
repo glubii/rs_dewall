@@ -72,7 +72,9 @@ This function calculates the delaunay distance.
 ![](doc/dd.png)
 
 ## TODO
- - Use k-d-trees or other acceleration structures
- - Threading for the recursion steps
- - Stepwise generation gif
- - Switch to an existing math library
+ - [ ] Use k-d-trees or other acceleration structures
+ - [ ] Threading for the recursion steps
+ - [ ] Stepwise generation gif
+ - [x] Switch to an existing math library
+ - [ ] Fix page references to the paper
+ - [ ] Turn into rust package/library
