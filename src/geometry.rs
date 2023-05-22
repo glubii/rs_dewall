@@ -315,15 +315,15 @@ mod tests {
         let span_x_1 = Edge::new(alpha.start, p2);
 
         let sp = SpacePartition::new(span_x, span_y, alpha);
-        let (sp1, sp2) = sp.partition();
-        assert_eq!(sp1.alpha, alpha_1);
-        assert_eq!(sp2.alpha, alpha_2);
+        let (space_partition_1, space_partition_2) = sp.partition();
+        assert_eq!(space_partition_1.alpha, alpha_1);
+        assert_eq!(space_partition_2.alpha, alpha_2);
 
-        assert_eq!(sp1.span_x, span_x_1);
-        assert_eq!(sp2.span_x, span_x_2);
+        assert_eq!(space_partition_1.span_x, span_x_1);
+        assert_eq!(space_partition_2.span_x, span_x_2);
 
-        assert_eq!(sp1.span_y, span_y);
-        assert_eq!(sp2.span_y, span_y);
+        assert_eq!(space_partition_1.span_y, span_y);
+        assert_eq!(space_partition_2.span_y, span_y);
     }
 
     #[test]
@@ -343,14 +343,14 @@ mod tests {
         let span_y_2 = Edge::new(alpha.start, p2);
 
         let sp = SpacePartition::new(span_x, span_y, alpha);
-        let (sp1, sp2) = sp.partition();
-        assert_eq!(sp1.alpha, alpha_1);
-        assert_eq!(sp2.alpha, alpha_2);
+        let (space_partition_1, space_partition_2) = sp.partition();
+        assert_eq!(space_partition_1.alpha, alpha_1);
+        assert_eq!(space_partition_2.alpha, alpha_2);
 
-        assert_eq!(sp1.span_x, span_x);
-        assert_eq!(sp2.span_x, span_x);
+        assert_eq!(space_partition_1.span_x, span_x);
+        assert_eq!(space_partition_2.span_x, span_x);
 
-        assert_eq!(sp1.span_y, span_y_1);
-        assert_eq!(sp2.span_y, span_y_2);
+        assert_eq!(space_partition_1.span_y, span_y_1);
+        assert_eq!(space_partition_2.span_y, span_y_2);
     }
 }
