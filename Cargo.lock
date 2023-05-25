@@ -594,6 +594,7 @@ dependencies = [
  "nalgebra 0.32.2",
  "num-traits",
  "rand",
+ "typenum",
 ]
 
 [[package]]

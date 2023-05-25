@@ -1,3 +1,5 @@
+use kd_tree::KdTree;
+
 use crate::geometry::Edge;
 use crate::geometry::Point;
 use crate::geometry::SpacePartition;
@@ -13,7 +15,7 @@ use crate::geometry::Triangle;
  *
  * @return          Vector of Triangles that result from the delaunay algorithm
  */
-pub fn de_wall(pointset: Vec<Point>, sp: &SpacePartition, afl: &mut Vec<Edge>) -> Vec<Triangle> {
+pub fn de_wall(points_kdtree: KdTree<Point>, sp: &SpacePartition, afl: &mut Vec<Edge>) -> Vec<Triangle> {
     // (d-1) faces intersected by plane alpha
     let mut afl_sigma: Vec<Edge> = Vec::new();
 
@@ -27,12 +29,12 @@ pub fn de_wall(pointset: Vec<Point>, sp: &SpacePartition, afl: &mut Vec<Edge>) -
     let mut sigma: Vec<Triangle> = Vec::new();
 
     // Return from the recursive step once no points remain
-    if pointset.is_empty() {
+    if points_kdtree.is_empty() {
         return sigma;
     }
 
     //Divide Points into left and right side groups
-    let (pointset_1, pointset_2) = pointset_partition(&pointset, &sp.alpha); //, &mut pointset_1, &mut pointset_2);
+    let (pointset_1, pointset_2) = pointset_partition(&points_kdtree, &sp.alpha); //, &mut pointset_1, &mut pointset_2);
 
     // Create first Triangle if none exist in afl
     if afl.is_empty() {
@@ -239,10 +241,10 @@ fn in_halfspace(f: &Edge, p1: &Point, p2: &Point) -> bool {
  * @param alpha Edge that is the dividing line
  * @return      Tuple of two disjunct pointsets containing P
  */
-fn pointset_partition(pointset: &Vec<Point>, alpha: &Edge) -> (Vec<Point>, Vec<Point>) {
+fn pointset_partition(points_kdtree: KdTree<Point>, alpha: &Edge) -> (Vec<Point>, Vec<Point>) {
     let mut points_left_side: Vec<Point> = Vec::new();
     let mut points_right_side: Vec<Point> = Vec::new();
-    for p in pointset {
+    for p in points_kdtree {
         if p.left_side_of_edge(alpha) {
             points_left_side.push(*p);
         } else {

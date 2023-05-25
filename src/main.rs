@@ -8,6 +8,8 @@ use geometry::SpacePartition;
 mod algorithm;
 use algorithm::de_wall;
 
+use kd_tree;
+
 fn main() {
     let imgx = 1920;
     let imgy = 1080;
@@ -47,6 +49,9 @@ fn main() {
     //points_list.sort();
     points_list.dedup();
 
+    let points_kdtree = kd_tree::KdTree::build_by_ordered_float(points_list);
+
+
     // Apply the Delaunay algorithm
     let mut afl: Vec<Edge> = Vec::new();
 
@@ -59,7 +64,7 @@ fn main() {
         ),
     );
 
-    let sigma = de_wall(points_list, &sp, &mut afl);
+    let sigma = de_wall(points_kdtree, &sp, &mut afl);
 
     for triangle in &sigma {
         // Draw each side of the triangle

@@ -1,3 +1,5 @@
+use kd_tree::KdPoint;
+use typenum;
 use nalgebra::distance_squared;
 use nalgebra::Point2;
 use std::fmt::Debug;
@@ -102,6 +104,12 @@ impl DerefMut for Point {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
+}
+
+impl KdPoint for Point {
+    type Scalar = f32;
+    type Dim = typenum::U2;
+    fn at(&self, k: usize) -> f32 {self.0[k]}
 }
 
 #[derive(Clone, Copy, Debug)]
